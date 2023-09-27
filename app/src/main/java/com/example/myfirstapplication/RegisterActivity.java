@@ -18,7 +18,6 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class RegisterActivity extends AppCompatActivity {
 
-
     private EditText txtFieldEmail, txtFieldPassword;
     private Button btnRegister;
     private FirebaseAuth auth;
@@ -61,6 +60,8 @@ public class RegisterActivity extends AppCompatActivity {
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if (task.isSuccessful()) {
                     Toast.makeText(RegisterActivity.this, "Register Successful", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+                    finish();
                 } else {
                     Toast.makeText(RegisterActivity.this, "Register Failed", Toast.LENGTH_SHORT).show();
                 }
