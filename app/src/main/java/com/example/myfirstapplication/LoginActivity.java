@@ -1,7 +1,9 @@
 package com.example.myfirstapplication;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -11,9 +13,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.myfirstapplication.util.Utils;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -22,7 +28,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextView txtSignUp;
     private Button btnLogin;
     private FirebaseAuth auth;
-
+    ProgressDialog pd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,32 +38,48 @@ public class LoginActivity extends AppCompatActivity {
         txtFieldPassword = findViewById(R.id.txtFieldPassword);
         txtSignUp = findViewById(R.id.txtSignUp);
         btnLogin = findViewById(R.id.btnLogin);
+        pd = new ProgressDialog(this);
+
         auth = FirebaseAuth.getInstance();
         initOnClickListener();
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user != null) {
+            startActivity(new Intent(LoginActivity.this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
+            finish();
+        }
+
+    }
+
+
     private void initOnClickListener() {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String txt_email = txtFieldEmail.getText().toString();
-                String txt_password = txtFieldPassword.getText().toString();
 
-                if (TextUtils.isEmpty(txt_email) || TextUtils.isEmpty(txt_password)) {
-                    Toast.makeText(LoginActivity.this, "Empty Credentials !!!", Toast.LENGTH_SHORT).show();
-                } else if (txt_password.length() < 6) {
-                    Toast.makeText(LoginActivity.this, "Password too short !", Toast.LENGTH_SHORT).show();
-                } else {
+                boolean isEmptyEmail = Utils.validateTextField(txtFieldEmail, "Email");
+                boolean isEmptyPassword = Utils.validateTextFieldPassword(txtFieldPassword, "Password");
+
+                if (isEmptyEmail && isEmptyPassword) {
+                    String txt_email = txtFieldEmail.getText().toString();
+                    String txt_password = txtFieldPassword.getText().toString();
                     loginUser(txt_email, txt_password);
                 }
+
+
             }
         });
 
         txtSignUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+                startActivity(new Intent(LoginActivity.this, RegisterActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
                 finish();
             }
         });
@@ -66,12 +88,21 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void loginUser(String _email, String _password) {
+        pd.setMessage("Please Wait!");
+        pd.show();
         auth.signInWithEmailAndPassword(_email, _password).addOnSuccessListener(new OnSuccessListener<AuthResult>() {
             @Override
             public void onSuccess(AuthResult authResult) {
+                pd.dismiss();
                 Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(LoginActivity.this, StartActivity.class));
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
                 finish();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                pd.dismiss();
+                Toast.makeText(LoginActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
